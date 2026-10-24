@@ -18,7 +18,8 @@ function Tile({ icon, label, wobble }: { icon: string; label: string; wobble: st
 
 function App() {
   return (
-    <main className="min-h-screen bg-[#f0d9e6] flex items-center justify-center gap-14 p-8">
+    <main className="min-h-screen bg-[#d9a7c7] flex items-center justify-center p-8">
+  <div className="w-full max-w-6xl p-12 flex items-center justify-center gap-14 border-[6px] border-[#3b1d4a] bg-[#f0d9e6] shadow-[6px_6px_0_#3b1d4a,12px_12px_0_#b57ba3] rounded-[24px_40px_28px_36px/36px_24px_40px_28px]">
       {/* LEFT SIDE: the launcher grid */}
       <section className="grid grid-cols-3 gap-x-10 gap-y-12">
         {/* HOME: wide panel with sparkles + tilted mascot panel overlapping */}
@@ -43,7 +44,7 @@ function App() {
 
       {/* RIGHT SIDE: tall loading panel */}
       <aside
-        className={`${frame} w-56 h-[28rem] flex flex-col items-center justify-between p-6 rounded-[18px_10px_28px_12px/10px_26px_12px_30px]`}
+        className={`${frame} w-56 h-[28rem] shrink-0 flex flex-col items-center justify-between p-6 rounded-[18px_10px_28px_12px/10px_26px_12px_30px]`}
       >
         <div className="w-32 h-32 rounded-full border-[6px] border-[#3b1d4a] bg-[#d9a7c7] flex items-center justify-center text-6xl">
           🐻
@@ -57,7 +58,8 @@ function App() {
           </p>
         </div>
       </aside>
-    </main>
+      </div>
+</main>
   )
 }
 
