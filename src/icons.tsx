@@ -206,49 +206,115 @@ export function ImageIcon({ className, active = false }: IconProps) {
   )
 }
 
-// ---- Person geometry ------------------------------------------------------
-// On hover the person shrinks to fit INSIDE the magnifying glass. We work out
-// the small version of each shape here, so the outline stays 3 units thick
-// (scaling a whole group would make the outline thinner too).
-const SHRINK = 0.56 //  how small the person gets inside the lens
-const shrinkX = (x: number) => (24 + (x - 24) * SHRINK - 1).toFixed(2)
-const shrinkY = (y: number) => (25 + (y - 25) * SHRINK - 3).toFixed(2)
-const k = (n: number) => (n * SHRINK).toFixed(2)
-const HEAD_OFF = { cx: 24, cy: 16, r: 9 }
-const HEAD_ON = { cx: shrinkX(24), cy: shrinkY(16), r: k(9) }
-// shoulders: a rounded hump starting at the bottom-left corner (7, 43)
-const SHOULDERS_OFF = 'M7 43c0-10 7-16 17-16s17 6 17 16Z'
-const SHOULDERS_ON = `M${shrinkX(7)} ${shrinkY(43)}c0-${k(10)} ${k(7)}-${k(16)} ${k(17)}-${k(16)}s${k(17)} ${k(6)} ${k(17)} ${k(16)}Z`
+// ---- Profile: the "hi" sequence --------------------------------------------
+// On hover the person says hi, in this order (times in seconds from the hover):
+//   0.0  an arm swings up and WAVES (about 1.3s), the face fades in with dot eyes
+//   0.5  a chat bubble saying "hi" pops in, and the dot eyes become ^ ^
+// Each part has its own `delay` / `duration`, so they overlap like a little scene.
+const HI_AT = 0.5 // seconds until the bubble pops and the eyes change (try 0.3 for snappier)
+const WAVE = [null, -14, 14, -14, 14, 0] // arm angles in degrees; null = "start from where you are"
 
-// Profile: head and shoulders. On hover a MAGNIFYING GLASS grows around the
-// person while the person shrinks to sit inside the lens.
+// Mouth: a small smile first, a bigger grin once the bubble lands
+const SMILE_SMALL = 'M21.5 20.5Q24 22 26.5 20.5'
+const SMILE_BIG = 'M20.5 20Q24 24.5 27.5 20'
+
+// Profile: head and shoulders that wave hello.
 export function UserIcon({ className, active = false }: IconProps) {
   return (
     <AnimatedSvg className={className} active={active}>
-      {/* the person: morphs from big (resting) to small (inside the lens) */}
-      <motion.circle
-        fill={YELLOW}
-        {...stroke}
-        variants={{ off: HEAD_OFF, on: HEAD_ON }}
-        transition={ICON_SPRING}
-      />
-      <motion.path
-        fill={YELLOW}
-        {...stroke}
-        variants={{ off: { d: SHOULDERS_OFF }, on: { d: SHOULDERS_ON } }}
-        transition={ICON_SPRING}
-      />
-      {/* the lens ring + handle: fade in while growing from the bottom-right */}
+      {/* the waving arm, behind the shoulders. Outer group: pops in. Inner group: waves. */}
       <motion.g
         variants={{
-          off: { opacity: 0, scale: 0.5, x: 6, y: 6 },
-          on: { opacity: 1, scale: 1, x: 0, y: 0 },
+          off: { opacity: 0, y: 6, scale: 0.7 },
+          on: { opacity: 1, y: 0, scale: 1 },
         }}
         transition={ICON_SPRING}
-        style={{ originX: 0.4, originY: 0.4 }}
+        style={{ originX: 0.5, originY: 1 }}
       >
-        <circle cx="23" cy="22" r="17" fill="none" {...stroke} />
-        <path d="M36 35 44 43" {...stroke} strokeWidth={6} />
+        <motion.g
+          variants={{
+            off: { rotate: 35 },
+            on: { rotate: WAVE, transition: { duration: 1.3, ease: 'easeInOut' } },
+          }}
+          transition={ICON_SPRING}
+          style={{ originX: 0.5, originY: 1 }} // pivot at the bottom of the arm
+        >
+          <rect x="4" y="22" width="8" height="20" rx="4" fill={YELLOW} {...stroke} />
+          <circle cx="8" cy="20" r="5" fill={YELLOW} {...stroke} />
+        </motion.g>
+      </motion.g>
+
+      {/* the person (same as the resting icon) */}
+      <circle cx="24" cy="16" r="9" fill={YELLOW} {...stroke} />
+      <path d="M7 43c0-10 7-16 17-16s17 6 17 16Z" fill={YELLOW} {...stroke} />
+
+      {/* face, part 1: dot eyes while waving, then they fade out as the bubble lands */}
+      <motion.g
+        variants={{
+          off: { opacity: 0, transition: { duration: 0.1 } },
+          on: { opacity: [0, 1, 1, 0], transition: { duration: HI_AT + 0.05, times: [0, 0.12, 0.85, 1] } },
+        }}
+      >
+        <circle cx="20" cy="15.5" r="1.6" fill={INK} />
+        <circle cx="28" cy="15.5" r="1.6" fill={INK} />
+      </motion.g>
+      {/* face, part 2: happy ^ ^ eyes, appear when the bubble pops */}
+      <motion.path
+        d="M17.8 17 20 14.4 22.2 17M25.8 17 28 14.4 30.2 17"
+        {...stroke}
+        strokeWidth={2.4}
+        variants={{
+          off: { opacity: 0, transition: { duration: 0.1 } },
+          on: { opacity: 1, transition: { delay: HI_AT, duration: 0.1 } },
+        }}
+      />
+      {/* face, part 3: mouth, small smile -> big grin */}
+      <motion.path
+        {...stroke}
+        strokeWidth={2.2}
+        variants={{
+          off: { opacity: 0, d: SMILE_SMALL },
+          on: {
+            opacity: 1,
+            d: SMILE_BIG,
+            transition: {
+              opacity: { duration: 0.15 },
+              d: { type: 'spring', stiffness: 300, damping: 14, delay: HI_AT },
+            },
+          },
+        }}
+        transition={ICON_SPRING}
+      />
+
+      {/* the chat bubble saying "hi", pops from its tail (bottom-left) */}
+      <motion.g
+        variants={{
+          off: { opacity: 0, scale: 0.2, transition: { duration: 0.12 } },
+          on: {
+            opacity: 1,
+            scale: 1,
+            transition: { type: 'spring', stiffness: 420, damping: 15, delay: HI_AT },
+          },
+        }}
+        style={{ originX: 0.17, originY: 1 }}
+      >
+        <path
+          d="M33.5 0H42.5A4.5 4.5 0 0 1 47 4.5V7.5A4.5 4.5 0 0 1 42.5 12H38L32 17.5 33 12H33.5A4.5 4.5 0 0 1 29 7.5V4.5A4.5 4.5 0 0 1 33.5 0Z"
+          fill={WHITE}
+          {...stroke}
+        />
+        <text
+          x="38"
+          y="6.3"
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize="8"
+          fontWeight="800"
+          fill={INK}
+          style={{ fontFamily: 'inherit' }}
+        >
+          hi
+        </text>
       </motion.g>
     </AnimatedSvg>
   )
