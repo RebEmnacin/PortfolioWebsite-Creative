@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ComponentType } from 'react'
 import { MotionConfig, motion, type Variants } from 'motion/react'
 import { BearIcon, FolderIcon, ImageIcon, PlaneIcon, SparkleIcon, UserIcon } from './icons'
 import { WavePattern } from './WavePattern'
@@ -46,14 +46,26 @@ function pop(scale = 1.07, lift = -10) {
 // ---------------------------------------------------------------------------
 
 // A reusable tile (Files, Gallery, Contacts, Profile) that grows to fill its grid cell
-function Tile({ icon, label }: { icon: ReactNode; label: string }) {
+function Tile({
+  Icon,
+  label,
+}: {
+  Icon: ComponentType<{ className?: string; active?: boolean }>
+  label: string
+}) {
+  // `active` is true only while the cursor is on the tile. The icon animates from it.
+  const [active, setActive] = useState(false)
   return (
     <motion.div variants={item} className="flex min-h-0 flex-col gap-4">
       <motion.div
         {...pop()}
+        onHoverStart={() => setActive(true)}
+        onHoverEnd={() => setActive(false)}
         className={`${frame} flex min-h-32 flex-1 cursor-pointer items-center justify-center`}
       >
-        <div className="aspect-square w-1/3 max-w-32 min-w-14">{icon}</div>
+        <div className="aspect-square w-1/3 max-w-32 min-w-14">
+          <Icon className="h-full w-full" active={active} />
+        </div>
       </motion.div>
       <p className="text-center text-base font-bold uppercase tracking-widest text-[#111111] md:text-lg">
         {label}
@@ -109,10 +121,10 @@ function App() {
             </motion.div>
           </ShapePanel>
 
-          <Tile icon={<PlaneIcon className="h-full w-full" />} label="Contacts" />
-          <Tile icon={<FolderIcon className="h-full w-full" />} label="Files" />
-          <Tile icon={<ImageIcon className="h-full w-full" />} label="Gallery" />
-          <Tile icon={<UserIcon className="h-full w-full" />} label="Profile" />
+          <Tile Icon={PlaneIcon} label="Contacts" />
+          <Tile Icon={FolderIcon} label="Files" />
+          <Tile Icon={ImageIcon} label="Gallery" />
+          <Tile Icon={UserIcon} label="Profile" />
         </section>
 
         {/* RIGHT SIDE: tall loading panel, full height */}
