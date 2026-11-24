@@ -2,6 +2,9 @@ import type { ReactNode } from 'react'
 import { MotionConfig, motion, type Variants } from 'motion/react'
 import { BearIcon, FolderIcon, ImageIcon, PlaneIcon, SparkleIcon, UserIcon } from './icons'
 import { WavePattern } from './WavePattern'
+import { ShapePanel } from './ShapePanel'
+import { homeShape, loadingShape } from './shapes'
+import { HOVER_SHADOW, REST_SHADOW, SPRING } from './pop'
 
 // The shared "marker frame" look: thick black border + white fill.
 // Corners are softly rounded but small, so every box still reads as a sharp square.
@@ -27,11 +30,8 @@ const item: Variants = {
 // On hover a component lifts, grows slightly and its hard shadow stretches out,
 // as if it pops off the page. It's a spring in both directions, so entering,
 // leaving and pressing all blend into each other with no jump.
-const REST_SHADOW = '4px 4px 0 #111111, 8px 8px 0 #ffcb05'
-const HOVER_SHADOW = '10px 10px 0 #111111, 20px 20px 0 #ffcb05'
-// A soft, unhurried spring: about 0.6s to arrive, with a small bounce at the end.
-// Raise `duration` for slower, lower it for snappier; raise `bounce` (0 to 1) for more wobble.
-const SPRING = { type: 'spring', duration: 0.6, bounce: 0.3 } as const
+// The shadow distances and the spring now live in ./pop.ts, so these rectangular
+// components and the step-shaped panels (ShapePanel) always pop identically.
 
 // Spread onto any motion element: <motion.div {...pop()} />.
 // Use a smaller `scale` for big panels so they don't swell into their neighbours.
@@ -79,14 +79,19 @@ function App() {
         {/* LEFT SIDE: the launcher grid, stretched to the page edges */}
         <section className="relative z-10 grid flex-1 grid-cols-3 grid-rows-[1.1fr_1fr] gap-x-8 gap-y-12 lg:gap-x-12">
           {/* HOME: wide panel with sparkles + tilted mascot panel overlapping */}
-          <motion.div
+          <ShapePanel
+            shape={homeShape}
             variants={item}
-            {...pop(1.035, -6)}
-            className={`${frame} relative col-span-2 flex min-h-44 items-center justify-around pl-6 pr-32 md:pr-44`}
+            popScale={1.035}
+            popLift={-6}
+            className="col-span-2 min-h-44"
           >
-            <SparkleIcon className="h-12 w-12 md:h-16 md:w-16" />
-            <SparkleIcon className="h-12 w-12 md:h-16 md:w-16" outline />
-            <SparkleIcon className="h-12 w-12 md:h-16 md:w-16" />
+            {/* the sparkles sit in the LOW block (left). 19% = how far the right block is raised */}
+            <div className="absolute left-0 top-[19%] flex h-[81%] w-[47%] items-center justify-around">
+              <SparkleIcon className="h-12 w-12 md:h-16 md:w-16" />
+              <SparkleIcon className="h-12 w-12 md:h-16 md:w-16" outline />
+              <SparkleIcon className="h-12 w-12 md:h-16 md:w-16" />
+            </div>
             {/* the mascot panel floats up and down, and pops (scale + shadow only,
                 so the pop never fights the floating motion) */}
             <motion.div
@@ -98,11 +103,11 @@ function App() {
               whileHover={{ scale: 1.1, boxShadow: HOVER_SHADOW }}
               whileTap={{ scale: 1.02, boxShadow: REST_SHADOW }}
               transition={SPRING}
-              className={`${frame} absolute -right-6 -top-8 z-10 flex h-32 w-32 rotate-6 cursor-pointer items-center justify-center md:h-40 md:w-40`}
+              className={`${frame} pointer-events-auto absolute -right-6 -top-8 z-10 flex h-32 w-32 rotate-6 cursor-pointer items-center justify-center md:h-40 md:w-40`}
             >
               <BearIcon className="h-20 w-20 md:h-24 md:w-24" />
             </motion.div>
-          </motion.div>
+          </ShapePanel>
 
           <Tile icon={<PlaneIcon className="h-full w-full" />} label="Contacts" />
           <Tile icon={<FolderIcon className="h-full w-full" />} label="Files" />
@@ -111,15 +116,21 @@ function App() {
         </section>
 
         {/* RIGHT SIDE: tall loading panel, full height */}
-        <motion.aside
+        <ShapePanel
+          shape={loadingShape}
           variants={item}
-          {...pop(1.035, -6)}
-          className={`${frame} relative z-10 flex h-80 w-full shrink-0 flex-col items-center justify-between p-8 lg:h-auto lg:w-72`}
+          popScale={1.035}
+          popLift={-6}
+          className="z-10 h-80 w-full shrink-0 lg:h-auto lg:w-72"
         >
-          <div className="flex h-44 w-44 items-center justify-center rounded-full border-[6px] border-[#111111] bg-white">
-            <BearIcon className="h-28 w-28" />
+          {/* TOP block (narrower): mascot circle. 77% = 100% minus the 23% the bottom block is shifted */}
+          <div className="absolute left-0 top-8 flex w-[77%] justify-center">
+            <div className="flex h-44 w-44 items-center justify-center rounded-full border-[6px] border-[#111111] bg-white">
+              <BearIcon className="h-28 w-28" />
+            </div>
           </div>
-          <div className="w-full">
+          {/* BOTTOM block (shifted right): progress bar + label */}
+          <div className="absolute bottom-8 left-[23%] right-0 px-8">
             <div className="h-6 overflow-hidden rounded-full border-4 border-[#111111] bg-white">
               <div className="h-full w-2/3 bg-[#ffcb05]" />
             </div>
@@ -127,7 +138,7 @@ function App() {
               Loading
             </p>
           </div>
-        </motion.aside>
+        </ShapePanel>
       </motion.main>
     </MotionConfig>
   )
